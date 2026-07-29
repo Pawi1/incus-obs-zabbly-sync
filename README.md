@@ -1,5 +1,7 @@
 # incus-obs-zabbly-sync
 
+[![build result](https://build.opensuse.org/projects/home:pawil:incus:stable/packages/incus/badge.svg?type=default)](https://build.opensuse.org/package/show/home:pawil:incus:stable/incus)
+
 Scripts that treat [zabbly/incus](https://github.com/zabbly/incus) (Stéphane
 Graber's Incus packaging repo) as the source of truth for which upstream
 [lxc/incus](https://github.com/lxc/incus) tag and cherry-picked fixes an
