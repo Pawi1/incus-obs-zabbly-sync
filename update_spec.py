@@ -34,6 +34,17 @@ def update_version(spec, version):
     return new_spec
 
 
+def ensure_v_prefixed_source(spec):
+    """linuxcontainers.org only reliably keeps a v-prefixed release tarball
+    URL around long-term -- the plain "%{name}-%{version}.tar.xz" name has
+    been observed to 404 even for a previously-working version once a newer
+    release comes out (v6.0.6/v7.0.1 still had it at the time this was
+    written, v7.2.0 and v7.3.0 did not). Force the Source:/Source1: URLs and
+    local filenames to the v-prefixed form so this doesn't silently break."""
+    pattern = re.compile(r'^(Source1?:\s+\S*/%\{name\}-)(?:v)?(%\{version\}\.tar\.xz(?:\.asc)?)$', re.M)
+    return pattern.sub(r'\g<1>v\g<2>', spec)
+
+
 def build_patch_block(manifest):
     lines = [PATCH_BLOCK_START]
     for p in manifest:
@@ -92,6 +103,7 @@ def main():
     version = strip_v(extract_data["tag"])
     spec = spec_path.read_text()
     spec = update_version(spec, version)
+    spec = ensure_v_prefixed_source(spec)
     spec = insert_or_replace_patch_block(spec, build_patch_block(manifest))
     spec_path.write_text(spec)
     print(f"updated {spec_path}: Version -> {version}, {len(manifest)} Patch entries", file=sys.stderr)

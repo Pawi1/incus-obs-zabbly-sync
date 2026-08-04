@@ -121,14 +121,22 @@ python3 "$SCRIPTS_DIR/update_spec.py" \
 
 rm -f manifest.json
 
-log "downloading release tarball $NEW_VERSION"
-curl -sSL -f -o "incus-${NEW_VERSION}.tar.xz" \
-	"https://linuxcontainers.org/downloads/incus/incus-${NEW_VERSION}.tar.xz"
-curl -sSL -f -o "incus-${NEW_VERSION}.tar.xz.asc" \
-	"https://linuxcontainers.org/downloads/incus/incus-${NEW_VERSION}.tar.xz.asc"
+# linuxcontainers.org only reliably keeps the v-prefixed tarball name around
+# long-term (the plain "incus-<version>.tar.xz" name has 404'd for versions
+# that worked fine under that name at the time they were packaged) -- see
+# update_spec.py's ensure_v_prefixed_source, which keeps Source:/Source1: in
+# sync with this.
+log "downloading release tarball v$NEW_VERSION"
+curl -sSL -f -o "incus-v${NEW_VERSION}.tar.xz" \
+	"https://linuxcontainers.org/downloads/incus/incus-v${NEW_VERSION}.tar.xz"
+curl -sSL -f -o "incus-v${NEW_VERSION}.tar.xz.asc" \
+	"https://linuxcontainers.org/downloads/incus/incus-v${NEW_VERSION}.tar.xz.asc"
 
+# The old tarball may be tracked under either naming scheme depending on when
+# it was packaged, so try both rather than assume.
 osc rm --force "incus-${CURRENT_VERSION}.tar.xz" "incus-${CURRENT_VERSION}.tar.xz.asc" 2>/dev/null || true
-osc add "incus-${NEW_VERSION}.tar.xz" "incus-${NEW_VERSION}.tar.xz.asc"
+osc rm --force "incus-v${CURRENT_VERSION}.tar.xz" "incus-v${CURRENT_VERSION}.tar.xz.asc" 2>/dev/null || true
+osc add "incus-v${NEW_VERSION}.tar.xz" "incus-v${NEW_VERSION}.tar.xz.asc"
 
 log "running local build validation: osc build $REPO $ARCH incus.spec"
 BUILD_LOG="$SCRATCH/build.log"
@@ -147,14 +155,15 @@ if [[ ${#OLD_LIVE_PATCHES[@]} -gt 0 ]]; then
 	osc rm --force "${OLD_LIVE_PATCHES[@]}"
 fi
 osc rm --force "incus-${CURRENT_VERSION}.tar.xz" "incus-${CURRENT_VERSION}.tar.xz.asc" 2>/dev/null || true
+osc rm --force "incus-v${CURRENT_VERSION}.tar.xz" "incus-v${CURRENT_VERSION}.tar.xz.asc" 2>/dev/null || true
 
 cp "$SCRATCH/incus.spec" .
 cp "$SCRATCH/incus.changes" .
-cp "$SCRATCH/incus-${NEW_VERSION}.tar.xz" .
-cp "$SCRATCH/incus-${NEW_VERSION}.tar.xz.asc" .
+cp "$SCRATCH/incus-v${NEW_VERSION}.tar.xz" .
+cp "$SCRATCH/incus-v${NEW_VERSION}.tar.xz.asc" .
 cp "$SCRATCH"/0*.patch . 2>/dev/null || true
 
-osc add "incus-${NEW_VERSION}.tar.xz" "incus-${NEW_VERSION}.tar.xz.asc"
+osc add "incus-v${NEW_VERSION}.tar.xz" "incus-v${NEW_VERSION}.tar.xz.asc"
 NEW_LIVE_PATCHES=(0*.patch)
 if [[ ${#NEW_LIVE_PATCHES[@]} -gt 0 ]]; then
 	osc add "${NEW_LIVE_PATCHES[@]}"
